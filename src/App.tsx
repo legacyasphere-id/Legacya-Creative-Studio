@@ -165,7 +165,15 @@ export default function App() {
             const data = await res.json();
             if (data && data.concept && data.concept.centralIdea) {
               generatedConcept = data.concept;
-              usedMode = 'gemini_api';
+              usedMode =
+                data.source === 'gemini_api' || data.concept.source === 'gemini_api'
+                  ? 'gemini_api'
+                  : 'local_deterministic';
+              if (usedMode === 'local_deterministic') {
+                setBannerMessage(
+                  'Gemini API unavailable or unconfigured; synthesized concept via Deterministic Studio Engine.'
+                );
+              }
             }
           }
         } catch {
@@ -230,26 +238,70 @@ export default function App() {
     }));
   };
 
-  const handleGenerateStoryboard = () => {
-    if (!project.concept) return;
+  const handleGenerateStoryboard = async () => {
+    if (!project.concept || isGenerating) return;
+    const activeConcept = project.concept;
+    const activeBrief = project.brief;
     pushUndoSnapshot(project.storyboard);
-    const nextSlides = generateStoryboardLocal(project.brief, project.concept);
-    setProject((prev) => ({
-      ...prev,
-      status: 'Ready for review',
-      updatedAt: new Date().toISOString(),
-      storyboard: nextSlides,
-      history: [
-        appendHistory(
-          'storyboard_generated',
-          `Generated ${nextSlides.length}-slide storyboard from approved concept "${project.concept?.centralIdea}".`,
-          undefined,
-          'local_deterministic'
-        ),
-        ...prev.history,
-      ],
-    }));
-    if (nextSlides[0]) setSelectedSlideId(nextSlides[0].id);
+    setIsGenerating(true);
+    setBannerMessage(null);
+
+    try {
+      let nextSlides: StoryboardSlide[] | null = null;
+      let usedMode: 'local_deterministic' | 'gemini_api' = 'local_deterministic';
+
+      if (executionMode === 'gemini_api') {
+        try {
+          const res = await fetch('/api/gemini/storyboard', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ brief: activeBrief, concept: activeConcept }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data && Array.isArray(data.storyboard) && data.storyboard.length > 0) {
+              nextSlides = data.storyboard;
+              usedMode = data.source === 'gemini_api' ? 'gemini_api' : 'local_deterministic';
+              if (usedMode === 'local_deterministic') {
+                setBannerMessage(
+                  'Gemini API unavailable or unconfigured; synthesized storyboard via Deterministic Studio Engine.'
+                );
+              }
+            }
+          }
+        } catch {
+          // Fall back cleanly to deterministic studio engine
+        }
+      }
+
+      if (!nextSlides) {
+        nextSlides = generateStoryboardLocal(activeBrief, activeConcept);
+        if (executionMode === 'gemini_api') {
+          setBannerMessage(
+            'Gemini API unavailable or quota reached; synthesized storyboard via Deterministic Studio Engine.'
+          );
+        }
+      }
+
+      setProject((prev) => ({
+        ...prev,
+        status: 'Ready for review',
+        updatedAt: new Date().toISOString(),
+        storyboard: nextSlides!,
+        history: [
+          appendHistory(
+            'storyboard_generated',
+            `Generated ${nextSlides!.length}-slide storyboard from approved concept "${activeConcept.centralIdea}".`,
+            undefined,
+            usedMode
+          ),
+          ...prev.history,
+        ],
+      }));
+      if (nextSlides[0]) setSelectedSlideId(nextSlides[0].id);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleUpdateSlide = (slideId: string, patch: Partial<StoryboardSlide>) => {
@@ -348,16 +400,51 @@ export default function App() {
     }
   };
 
-  const handleRegenerateSlideCopy = (slideId: string) => {
+  const handleRegenerateSlideCopy = async (slideId: string) => {
     const target = project.storyboard.find((s) => s.id === slideId);
-    if (!target) return;
+    if (!target || isGenerating) return;
     pushUndoSnapshot(project.storyboard);
     copyVariationSeedRef.current += 1;
-    const nextCopy = regenerateSingleSlideCopyLocal(
-      target,
-      project.brief,
-      copyVariationSeedRef.current
-    );
+    const seed = copyVariationSeedRef.current;
+
+    let nextCopy: Pick<StoryboardSlide, 'primaryHeadline' | 'supportingCopy' | 'lastModifiedAt'> | null =
+      null;
+    let usedMode: 'local_deterministic' | 'gemini_api' = 'local_deterministic';
+
+    if (executionMode === 'gemini_api') {
+      setIsGenerating(true);
+      try {
+        const res = await fetch('/api/gemini/slide-copy', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            slide: target,
+            brief: project.brief,
+            variationSeed: seed,
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.copy && data.copy.primaryHeadline) {
+            nextCopy = data.copy;
+            usedMode = data.source === 'gemini_api' ? 'gemini_api' : 'local_deterministic';
+            if (usedMode === 'local_deterministic') {
+              setBannerMessage(
+                `Gemini API unavailable or unconfigured; regenerated ${slideId} copy via Deterministic Studio Engine.`
+              );
+            }
+          }
+        }
+      } catch {
+        // Fall back cleanly to deterministic studio engine
+      } finally {
+        setIsGenerating(false);
+      }
+    }
+
+    if (!nextCopy) {
+      nextCopy = regenerateSingleSlideCopyLocal(target, project.brief, seed);
+    }
 
     setProject((prev) => ({
       ...prev,
@@ -365,7 +452,7 @@ export default function App() {
       updatedAt: new Date().toISOString(),
       storyboard: prev.storyboard.map((s) =>
         s.id === slideId
-          ? { ...s, ...nextCopy, approved: false }
+          ? { ...s, ...nextCopy!, approved: false }
           : s
       ),
       history: [
@@ -373,7 +460,7 @@ export default function App() {
           'slide_copy_regenerated',
           `Regenerated headline and supporting copy for ${slideId} without modifying other slides.`,
           slideId,
-          'local_deterministic'
+          usedMode
         ),
         ...prev.history,
       ],

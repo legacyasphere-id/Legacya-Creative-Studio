@@ -220,6 +220,22 @@ export const SlideCanvasPreview: React.FC<SlideCanvasPreviewProps> = ({
       );
     }
 
+    if (el.type === 'GROUP') {
+      const groupChildren = [...(el.children || [])].sort(
+        (a, b) => a.layerOrder - b.layerOrder
+      );
+      return (
+        <div
+          key={el.id}
+          style={baseStyle}
+          onClick={handleClick}
+          title={`${el.name} (${el.id})`}
+        >
+          {groupChildren.map(renderElement)}
+        </div>
+      );
+    }
+
     return null;
   };
 

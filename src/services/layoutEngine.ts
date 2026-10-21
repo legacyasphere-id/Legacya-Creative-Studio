@@ -736,8 +736,7 @@ export function compileSlideSpecification(
       break;
     }
 
-    case 'image_with_caption':
-    case 'product_showcase': {
+    case 'image_with_caption': {
       const headlineY = 264;
       const hHeight = Math.min(
         220,
@@ -830,12 +829,480 @@ export function compileSlideSpecification(
       break;
     }
 
-    case 'service_showcase':
-    case 'large_statistic':
-    case 'closing_statement':
+    case 'product_showcase': {
+      const headlineWidth = Math.floor(contentWidth * 0.72);
+      const badgeWidth = contentWidth - headlineWidth - 24;
+      const headlineY = 256;
+      const hHeight = Math.min(
+        200,
+        estimateTextHeight(slide.primaryHeadline, headlineWidth, headlineFont.fontSize, headlineFont.lineHeight)
+      );
+
+      elements.push({
+        id: `${prefix}_headline`,
+        name: 'Product Artifact Headline',
+        type: 'TEXT',
+        x: M,
+        y: headlineY,
+        width: headlineWidth,
+        height: hHeight,
+        layerOrder: nextOrder(),
+        opacity: 1,
+        textContent: slide.primaryHeadline,
+        fontFamily: headlineFont.fontFamily,
+        fallbackFontFamily: headlineFont.localFallbackFamily,
+        fontSize: headlineFont.fontSize,
+        fontWeight: headlineFont.fontWeight,
+        lineHeight: headlineFont.lineHeight,
+        letterSpacing: headlineFont.letterSpacing,
+        textAlign: 'LEFT',
+        textColor: palette.textPrimary,
+        textStyleToken: 'heading',
+        overflowBehavior: 'WARN_IF_EXCEEDED',
+      });
+
+      elements.push({
+        id: `${prefix}_product_spec_badge`,
+        name: 'Artifact Spec Stamp',
+        type: 'RECTANGLE',
+        shapeType: 'RECTANGLE',
+        x: M + headlineWidth + 24,
+        y: headlineY + 8,
+        width: badgeWidth,
+        height: 56,
+        layerOrder: nextOrder(),
+        opacity: 1,
+        fill: palette.surfaceBox,
+        stroke: palette.border,
+        strokeWidth: 1,
+        cornerRadius: tokens.components.defaultCornerRadius,
+      });
+
+      elements.push({
+        id: `${prefix}_product_spec_label`,
+        name: 'Artifact Spec Code',
+        type: 'TEXT',
+        x: M + headlineWidth + 40,
+        y: headlineY + 22,
+        width: badgeWidth - 32,
+        height: 28,
+        layerOrder: nextOrder(),
+        opacity: 1,
+        textContent: 'SPEC · 1080×1440',
+        fontFamily: tokens.typography.label.fontFamily,
+        fallbackFontFamily: tokens.typography.label.localFallbackFamily,
+        fontSize: tokens.typography.label.fontSize,
+        fontWeight: 600,
+        lineHeight: 1.2,
+        letterSpacing: 0.06,
+        textAlign: 'CENTER',
+        textColor: palette.textPrimary,
+        textStyleToken: 'label',
+        overflowBehavior: 'TRUNCATE',
+      });
+
+      const stageY = 484;
+      const stageH = 540;
+      const sidebarW = Math.floor(contentWidth * 0.36);
+      const viewportW = contentWidth - sidebarW - 24;
+      const matchedAsset = assets.find((a) => a.id === slide.suggestedAssetId) || assets[0];
+
+      elements.push({
+        id: `${prefix}_product_stage`,
+        name: 'Product Specification Stage',
+        type: 'RECTANGLE',
+        shapeType: 'RECTANGLE',
+        x: M,
+        y: stageY,
+        width: sidebarW,
+        height: stageH,
+        layerOrder: nextOrder(),
+        opacity: 1,
+        fill: palette.surfaceBox,
+        stroke: palette.border,
+        strokeWidth: 1,
+        cornerRadius: tokens.components.defaultCornerRadius,
+      });
+
+      elements.push({
+        id: `${prefix}_body`,
+        name: 'Product Architecture Notes',
+        type: 'TEXT',
+        x: M + 28,
+        y: stageY + 36,
+        width: sidebarW - 56,
+        height: stageH - 72,
+        layerOrder: nextOrder(),
+        opacity: 1,
+        textContent: slide.supportingCopy,
+        fontFamily: bodyFont.fontFamily,
+        fallbackFontFamily: bodyFont.localFallbackFamily,
+        fontSize: Math.max(22, bodyFont.fontSize - 6),
+        fontWeight: bodyFont.fontWeight,
+        lineHeight: bodyFont.lineHeight,
+        letterSpacing: bodyFont.letterSpacing,
+        textAlign: 'LEFT',
+        textColor: palette.textSecondary,
+        textStyleToken: 'body',
+        overflowBehavior: 'WARN_IF_EXCEEDED',
+      });
+
+      elements.push({
+        id: `${prefix}_media_frame`,
+        name: 'Product Viewport Frame',
+        type: 'RECTANGLE',
+        shapeType: 'RECTANGLE',
+        x: M + sidebarW + 24,
+        y: stageY,
+        width: viewportW,
+        height: stageH,
+        layerOrder: nextOrder(),
+        opacity: 1,
+        fill: palette.bg,
+        stroke: palette.textPrimary,
+        strokeWidth: 1.5,
+        cornerRadius: tokens.components.defaultCornerRadius,
+      });
+
+      elements.push({
+        id: `${prefix}_image_asset`,
+        name: matchedAsset ? matchedAsset.name : 'Product Interface Slot',
+        type: 'IMAGE',
+        x: M + sidebarW + 40,
+        y: stageY + 16,
+        width: viewportW - 32,
+        height: stageH - 32,
+        layerOrder: nextOrder(),
+        opacity: 1,
+        assetId: matchedAsset?.id || 'asset_arch_monolith_01',
+        imageReference: matchedAsset?.previewDataUrl || 'internal://placeholder/product-viewport',
+        fitMode: 'FILL',
+        altText: slide.visualFocalPoint || slide.primaryHeadline,
+      });
+      break;
+    }
+
+    case 'service_showcase': {
+      const headlineY = 256;
+      const hHeight = Math.min(
+        210,
+        estimateTextHeight(slide.primaryHeadline, contentWidth, headlineFont.fontSize, headlineFont.lineHeight)
+      );
+      elements.push({
+        id: `${prefix}_headline`,
+        name: 'Capabilities Headline',
+        type: 'TEXT',
+        x: M,
+        y: headlineY,
+        width: contentWidth,
+        height: hHeight,
+        layerOrder: nextOrder(),
+        opacity: 1,
+        textContent: slide.primaryHeadline,
+        fontFamily: headlineFont.fontFamily,
+        fallbackFontFamily: headlineFont.localFallbackFamily,
+        fontSize: headlineFont.fontSize,
+        fontWeight: headlineFont.fontWeight,
+        lineHeight: headlineFont.lineHeight,
+        letterSpacing: headlineFont.letterSpacing,
+        textAlign: 'LEFT',
+        textColor: palette.textPrimary,
+        textStyleToken: 'heading',
+        overflowBehavior: 'WARN_IF_EXCEEDED',
+      });
+
+      const pillarSegments = slide.supportingCopy
+        .split(/(?:;|\n|\|)/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const pillarTexts = [
+        pillarSegments[0] || slide.supportingCopy,
+        pillarSegments[1] || 'Custom Web & Design Systems governed by reusable tokens.',
+        pillarSegments[2] || 'Editorial Creative Production engineered for native Figma handoff.',
+      ];
+
+      const rowStart = 500;
+      const rowHeight = 152;
+      const rowGap = 24;
+
+      for (let i = 0; i < 3; i++) {
+        const rowY = rowStart + i * (rowHeight + rowGap);
+        const idxCode = String(i + 1).padStart(2, '0');
+        elements.push({
+          id: `${prefix}_service_card_${idxCode}`,
+          name: `Service Pillar ${idxCode} Surface`,
+          type: 'RECTANGLE',
+          shapeType: 'RECTANGLE',
+          x: M,
+          y: rowY,
+          width: contentWidth,
+          height: rowHeight,
+          layerOrder: nextOrder(),
+          opacity: 1,
+          fill: i === 0 ? palette.surfaceBox : palette.bg,
+          stroke: i === 0 ? palette.textPrimary : palette.border,
+          strokeWidth: i === 0 ? 1.5 : 1,
+          cornerRadius: tokens.components.defaultCornerRadius,
+        });
+
+        elements.push({
+          id: `${prefix}_service_index_${idxCode}`,
+          name: `Service Pillar ${idxCode} Index`,
+          type: 'TEXT',
+          x: M + 32,
+          y: rowY + 36,
+          width: 96,
+          height: 44,
+          layerOrder: nextOrder(),
+          opacity: 1,
+          textContent: idxCode,
+          fontFamily: tokens.typography.display.fontFamily,
+          fallbackFontFamily: tokens.typography.display.localFallbackFamily,
+          fontSize: 36,
+          fontWeight: 600,
+          lineHeight: 1.1,
+          letterSpacing: -0.02,
+          textAlign: 'LEFT',
+          textColor: palette.textPrimary,
+          textStyleToken: 'display',
+          overflowBehavior: 'TRUNCATE',
+        });
+
+        elements.push({
+          id: i === 0 ? `${prefix}_body` : `${prefix}_service_copy_${idxCode}`,
+          name: `Service Pillar ${idxCode} Copy`,
+          type: 'TEXT',
+          x: M + 144,
+          y: rowY + 32,
+          width: contentWidth - 176,
+          height: rowHeight - 64,
+          layerOrder: nextOrder(),
+          opacity: 1,
+          textContent: pillarTexts[i],
+          fontFamily: bodyFont.fontFamily,
+          fallbackFontFamily: bodyFont.localFallbackFamily,
+          fontSize: Math.max(22, bodyFont.fontSize - 4),
+          fontWeight: i === 0 ? 500 : bodyFont.fontWeight,
+          lineHeight: bodyFont.lineHeight,
+          letterSpacing: bodyFont.letterSpacing,
+          textAlign: 'LEFT',
+          textColor: i === 0 ? palette.textPrimary : palette.textSecondary,
+          textStyleToken: 'body',
+          overflowBehavior: 'WARN_IF_EXCEEDED',
+        });
+      }
+      break;
+    }
+
+    case 'large_statistic': {
+      const statMatch = slide.primaryHeadline.match(/(\d+[%×xX+]?|\d+\.\d+)/);
+      const statValue = statMatch ? statMatch[1] : `0${slide.slideNumber}`;
+
+      elements.push({
+        id: `${prefix}_stat_figure`,
+        name: 'Monumental Figure Callout',
+        type: 'TEXT',
+        x: M,
+        y: 264,
+        width: Math.floor(contentWidth * 0.64),
+        height: 176,
+        layerOrder: nextOrder(),
+        opacity: 1,
+        textContent: statValue,
+        fontFamily: tokens.typography.display.fontFamily,
+        fallbackFontFamily: tokens.typography.display.localFallbackFamily,
+        fontSize: Math.max(96, tokens.typography.display.fontSize + 24),
+        fontWeight: 600,
+        lineHeight: 1.0,
+        letterSpacing: -0.03,
+        textAlign: 'LEFT',
+        textColor: palette.textPrimary,
+        textStyleToken: 'display',
+        overflowBehavior: 'TRUNCATE',
+      });
+
+      elements.push({
+        id: `${prefix}_stat_baseline`,
+        name: 'Metric Datum Rule',
+        type: 'LINE',
+        shapeType: 'LINE',
+        x: M,
+        y: 468,
+        width: contentWidth,
+        height: 1,
+        layerOrder: nextOrder(),
+        opacity: 1,
+        fill: null,
+        stroke: palette.textPrimary,
+        strokeWidth: 2,
+      });
+
+      const headlineY = 508;
+      const hHeight = Math.min(
+        240,
+        estimateTextHeight(slide.primaryHeadline, contentWidth, tokens.typography.heading.fontSize, tokens.typography.heading.lineHeight)
+      );
+      elements.push({
+        id: `${prefix}_headline`,
+        name: 'Metric Thesis Headline',
+        type: 'TEXT',
+        x: M,
+        y: headlineY,
+        width: contentWidth,
+        height: hHeight,
+        layerOrder: nextOrder(),
+        opacity: 1,
+        textContent: slide.primaryHeadline,
+        fontFamily: tokens.typography.heading.fontFamily,
+        fallbackFontFamily: tokens.typography.heading.localFallbackFamily,
+        fontSize: tokens.typography.heading.fontSize,
+        fontWeight: tokens.typography.heading.fontWeight,
+        lineHeight: tokens.typography.heading.lineHeight,
+        letterSpacing: tokens.typography.heading.letterSpacing,
+        textAlign: 'LEFT',
+        textColor: palette.textPrimary,
+        textStyleToken: 'heading',
+        overflowBehavior: 'WARN_IF_EXCEEDED',
+      });
+
+      const boxY = 788;
+      const boxH = 228;
+      elements.push({
+        id: `${prefix}_stat_context_box`,
+        name: 'Metric Context Frame',
+        type: 'RECTANGLE',
+        shapeType: 'RECTANGLE',
+        x: M,
+        y: boxY,
+        width: contentWidth,
+        height: boxH,
+        layerOrder: nextOrder(),
+        opacity: 1,
+        fill: palette.surfaceBox,
+        stroke: palette.border,
+        strokeWidth: 1,
+        cornerRadius: tokens.components.defaultCornerRadius,
+      });
+
+      elements.push({
+        id: `${prefix}_body`,
+        name: 'Metric Verification & Scope Copy',
+        type: 'TEXT',
+        x: M + 36,
+        y: boxY + 32,
+        width: contentWidth - 72,
+        height: boxH - 64,
+        layerOrder: nextOrder(),
+        opacity: 1,
+        textContent: slide.supportingCopy,
+        fontFamily: bodyFont.fontFamily,
+        fallbackFontFamily: bodyFont.localFallbackFamily,
+        fontSize: bodyFont.fontSize,
+        fontWeight: bodyFont.fontWeight,
+        lineHeight: bodyFont.lineHeight,
+        letterSpacing: bodyFont.letterSpacing,
+        textAlign: 'LEFT',
+        textColor: palette.textSecondary,
+        textStyleToken: 'body',
+        overflowBehavior: 'WARN_IF_EXCEEDED',
+      });
+      break;
+    }
+
+    case 'closing_statement': {
+      const frameBoxY = 280;
+      const frameBoxH = 740;
+      elements.push({
+        id: `${prefix}_closing_frame_box`,
+        name: 'Closing Architectural Frame',
+        type: 'RECTANGLE',
+        shapeType: 'RECTANGLE',
+        x: M,
+        y: frameBoxY,
+        width: contentWidth,
+        height: frameBoxH,
+        layerOrder: nextOrder(),
+        opacity: 1,
+        fill: palette.surfaceBox,
+        stroke: palette.border,
+        strokeWidth: 1.5,
+        cornerRadius: tokens.components.defaultCornerRadius,
+      });
+
+      const headlineY = 348;
+      const innerWidth = contentWidth - 112;
+      const hHeight = Math.min(
+        280,
+        estimateTextHeight(slide.primaryHeadline, innerWidth, headlineFont.fontSize, headlineFont.lineHeight)
+      );
+      elements.push({
+        id: `${prefix}_headline`,
+        name: 'Closing Invitation Headline',
+        type: 'TEXT',
+        x: M + 56,
+        y: headlineY,
+        width: innerWidth,
+        height: hHeight,
+        layerOrder: nextOrder(),
+        opacity: 1,
+        textContent: slide.primaryHeadline,
+        fontFamily: headlineFont.fontFamily,
+        fallbackFontFamily: headlineFont.localFallbackFamily,
+        fontSize: headlineFont.fontSize,
+        fontWeight: headlineFont.fontWeight,
+        lineHeight: headlineFont.lineHeight,
+        letterSpacing: headlineFont.letterSpacing,
+        textAlign: 'LEFT',
+        textColor: palette.textPrimary,
+        textStyleToken: 'heading',
+        overflowBehavior: 'WARN_IF_EXCEEDED',
+      });
+
+      const dividerY = 668;
+      elements.push({
+        id: `${prefix}_closing_divider`,
+        name: 'Closing Colophon Rule',
+        type: 'LINE',
+        shapeType: 'LINE',
+        x: M + 56,
+        y: dividerY,
+        width: innerWidth,
+        height: 1,
+        layerOrder: nextOrder(),
+        opacity: 1,
+        fill: null,
+        stroke: palette.border,
+        strokeWidth: 1.5,
+      });
+
+      elements.push({
+        id: `${prefix}_body`,
+        name: 'Closing Briefing Summary',
+        type: 'TEXT',
+        x: M + 56,
+        y: dividerY + 40,
+        width: innerWidth,
+        height: 240,
+        layerOrder: nextOrder(),
+        opacity: 1,
+        textContent: slide.supportingCopy,
+        fontFamily: bodyFont.fontFamily,
+        fallbackFontFamily: bodyFont.localFallbackFamily,
+        fontSize: bodyFont.fontSize,
+        fontWeight: bodyFont.fontWeight,
+        lineHeight: bodyFont.lineHeight,
+        letterSpacing: bodyFont.letterSpacing,
+        textAlign: 'LEFT',
+        textColor: palette.textSecondary,
+        textStyleToken: 'body',
+        overflowBehavior: 'WARN_IF_EXCEEDED',
+      });
+      break;
+    }
+
     case 'editorial_headline':
     default: {
-      const headlineY = slide.layoutPattern === 'closing_statement' ? 420 : 340;
+      const headlineY = 340;
       const hHeight = Math.min(
         380,
         estimateTextHeight(slide.primaryHeadline, contentWidth, headlineFont.fontSize, headlineFont.lineHeight)
@@ -859,7 +1326,7 @@ export function compileSlideSpecification(
         letterSpacing: headlineFont.letterSpacing,
         textAlign: 'LEFT',
         textColor: palette.textPrimary,
-        textStyleToken: slide.layoutPattern === 'large_statistic' ? 'display' : 'heading',
+        textStyleToken: 'heading',
         overflowBehavior: 'WARN_IF_EXCEEDED',
       });
 

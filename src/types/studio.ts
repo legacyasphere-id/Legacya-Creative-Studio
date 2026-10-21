@@ -233,7 +233,8 @@ export interface FigmaImageNode extends BaseFigmaNode {
 
 export interface FigmaGroupNode extends BaseFigmaNode {
   type: 'GROUP';
-  childrenIds: string[];
+  childrenIds?: string[];
+  children?: FigmaSlideElement[];
 }
 
 export type FigmaSlideElement =

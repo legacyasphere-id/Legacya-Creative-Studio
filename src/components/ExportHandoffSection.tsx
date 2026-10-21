@@ -428,8 +428,8 @@ export const ExportHandoffSection: React.FC<ExportHandoffSectionProps> = ({
             <ol className="list-decimal list-inside space-y-2 leading-relaxed">
               <li>
                 Compile <code className="font-mono-tabular text-[#121212]">figma-plugin/code.ts</code> to{' '}
-                <code className="font-mono-tabular text-[#121212]">code.js</code> (or run{' '}
-                <code className="font-mono-tabular text-[#121212]">npx esbuild figma-plugin/code.ts --outfile=figma-plugin/code.js</code>).
+                <code className="font-mono-tabular text-[#121212]">figma-plugin/code.js</code> via{' '}
+                <code className="font-mono-tabular text-[#121212]">npm run build:plugin</code>.
               </li>
               <li>
                 In Figma Desktop, open <strong>Plugins → Development → Import plugin from manifest…</strong> and select{' '}
