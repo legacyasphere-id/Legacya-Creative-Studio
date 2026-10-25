@@ -484,10 +484,85 @@ test('Server-side Gemini API routes (/api/gemini/concept, /api/gemini/storyboard
     assert.equal(slideCopyRes.status, 200);
     assert.equal(slideCopyJson.source, 'local_deterministic');
     assert.equal(Boolean(slideCopyJson.copy?.primaryHeadline), true);
+
+    const imageRes = await fetch(`${baseUrl}/api/gemini/image`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        slide: INITIAL_SAMPLE_PROJECT.storyboard[0],
+        prompt: 'Architectural travertine study',
+        aspectRatio: '4:3',
+      }),
+    });
+    const imageJson = await imageRes.json();
+    assert.equal(imageRes.status, 200);
+    assert.equal(imageJson.source, 'local_deterministic');
+    assert.equal(imageJson.asset.aspectRatio, '4:3');
+    assert.equal(Boolean(imageJson.asset.previewDataUrl.startsWith('data:image/svg+xml')), true);
+
+    const { DEFAULT_INTELLIGENCE } = await import('../services/intelligenceBridge');
+    const intelBridgeRes = await fetch(`${baseUrl}/api/studio/intelligence-bridge`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ intelligence: DEFAULT_INTELLIGENCE }),
+    });
+    const intelBridgeJson = await intelBridgeRes.json();
+    assert.equal(intelBridgeRes.status, 200);
+    assert.equal(intelBridgeJson.storyboard.length, 5);
+    assert.equal(intelBridgeJson.promptMatrix.length, 5);
+    assert.equal(intelBridgeJson.contract.schemaVersion, '1.0.0');
   } finally {
     server.close();
     process.env.GEMINI_API_KEY = prevKey;
   }
 });
+
+test('Market Intelligence Bridge (#3 -> #2) validates inputs, synthesizes valid briefs, compiles 1.0.0 contracts, and generates Google Flow MCP prompt matrices', async () => {
+  const {
+    DEFAULT_INTELLIGENCE,
+    INTELLIGENCE_PRESETS,
+    validateIntelligenceRecord,
+    synthesizeBriefFromIntelligence,
+    buildImagePromptMatrix,
+    compileCampaignFromIntelligence,
+  } = await import('../services/intelligenceBridge');
+
+  // 1. Reject invalid/empty intelligence records
+  const invalidCheck = validateIntelligenceRecord({
+    ...DEFAULT_INTELLIGENCE,
+    source: '',
+    provenHook: 'short',
+  });
+  assert.equal(invalidCheck.valid, false);
+  assert.equal(Boolean(invalidCheck.fieldErrors.source), true);
+  assert.equal(Boolean(invalidCheck.fieldErrors.provenHook), true);
+
+  // 2. Compile every curated intelligence preset end-to-end
+  for (const preset of INTELLIGENCE_PRESETS) {
+    const validCheck = validateIntelligenceRecord(preset);
+    assert.equal(validCheck.valid, true);
+
+    const brief = synthesizeBriefFromIntelligence(preset);
+    assert.equal(validateBriefForm(brief).valid, true);
+
+    const compiled = compileCampaignFromIntelligence(preset);
+    assert.equal(compiled.contractValidation.valid, true);
+    assert.equal(compiled.contractValidation.errors.length, 0);
+    assert.equal(compiled.storyboard.length, preset.desiredSlideCount || 5);
+    assert.equal(compiled.promptMatrix.length, compiled.storyboard.length);
+
+    for (const promptEntry of compiled.promptMatrix) {
+      assert.equal(Boolean(promptEntry.flowMcpPrompt.includes('strictly no text')), true);
+      assert.equal(Boolean(promptEntry.negativePrompt.includes('typography')), true);
+    }
+    assert.equal(Boolean(compiled.htmlPreview.includes('<!DOCTYPE html>')), true);
+  }
+
+  // 3. Direct prompt matrix check
+  const sampleMatrix = buildImagePromptMatrix(INITIAL_SAMPLE_PROJECT.storyboard);
+  assert.equal(sampleMatrix.length, 7);
+  assert.equal(sampleMatrix[0].slideId, 'slide_01');
+});
+
 
 

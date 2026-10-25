@@ -16,6 +16,7 @@ interface DashboardSectionProps {
   onOpenSlideInEditor: (slideId: string) => void;
   onCreateNewProject: () => void;
   onResetSampleProject: () => void;
+  onOpenIntelligenceDrawer: () => void;
 }
 
 export const DashboardSection: React.FC<DashboardSectionProps> = ({
@@ -26,6 +27,7 @@ export const DashboardSection: React.FC<DashboardSectionProps> = ({
   onOpenSlideInEditor,
   onCreateNewProject,
   onResetSampleProject,
+  onOpenIntelligenceDrawer,
 }) => {
   const approvedCount = project.storyboard.filter((s) => s.approved).length;
   const totalSlides = project.storyboard.length;
@@ -34,8 +36,8 @@ export const DashboardSection: React.FC<DashboardSectionProps> = ({
     <div className="space-y-12">
       {/* Editorial Studio Marquee & Active Project Summary */}
       <section className="bg-white border border-[#D8D2C5] p-6 lg:p-10 space-y-8">
-        <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6 pb-6 border-b border-[#D8D2C5]">
-          <div className="space-y-2 max-w-3xl">
+        <div className="space-y-6 pb-6 border-b border-[#D8D2C5]">
+          <div className="space-y-3 max-w-4xl">
             <div className="flex flex-wrap items-center gap-2 text-xs font-mono-tabular text-[#5C5852] uppercase">
               <span>ACTIVE STUDIO PROJECT</span>
               <span aria-hidden="true">·</span>
@@ -48,16 +50,23 @@ export const DashboardSection: React.FC<DashboardSectionProps> = ({
               </span>
             </div>
 
-            <h1 className="text-3xl lg:text-5xl font-editorial font-semibold text-[#121212] tracking-tight">
+            <h1 className="text-3xl lg:text-5xl font-editorial font-semibold text-[#121212] tracking-tight leading-[1.12]">
               {project.brief.projectName}
             </h1>
 
-            <p className="text-base text-[#5C5852] leading-relaxed">
+            <p className="text-base text-[#5C5852] leading-relaxed max-w-3xl">
               {project.brief.carouselTopic}
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 shrink-0">
+          <div className="flex flex-wrap items-center gap-3 pt-1">
+            <button
+              type="button"
+              onClick={onOpenIntelligenceDrawer}
+              className="px-4 py-2.5 text-xs font-semibold uppercase tracking-wider border border-[#0F1A2C] bg-[#EBE6DC] text-[#0F1A2C] hover:bg-[#0F1A2C] hover:text-[#F7F4EE] transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+            >
+              Ingest Market Intelligence (#3 → #2)
+            </button>
             <button
               type="button"
               onClick={onCreateNewProject}
