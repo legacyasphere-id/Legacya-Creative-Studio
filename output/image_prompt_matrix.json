@@ -1,42 +1,62 @@
 [
   {
+    "slideId": "slide_01",
     "slideNumber": 1,
     "category": "cover_hook",
-    "headline": "Intentional systems architecture transforms Why High-Performing Brands A",
+    "layoutPattern": "minimal_cover",
+    "headline": "Why High-Performing Brands Are Firing Traditional Retainers for Autonomous Studio Infrastructure.",
     "visualConcept": "Display thesis anchored in the upper-middle register with geometric arc and diagonal index.",
-    "flowMcpPrompt": "Minimal architectural composition, editorial photography, high-end studio lighting, deep navy #0F1A2C accents on warm cream #F7F4EE textured background, ultra-sharp detail, 3:4 aspect ratio, subtle geometric structure reflecting intentional systems architecture transforms why high-performing brands a",
-    "aspectRatio": "3:4"
+    "flowMcpPrompt": "Minimal architectural composition, editorial photography, high-end studio lighting, deep navy #0F1A2C accents on warm cream #F7F4EE textured background, ultra-sharp detail, 3:4 aspect ratio, subtle geometric structure reflecting why high-performing brands are firing traditional retainers for autonomous studio infrastructure., strictly no text or typography",
+    "negativePrompt": "text, typography, letters, words, numbers, watermarks, signatures, logos, UI screenshots, neon glow, 3D cartoon blobs",
+    "aspectRatio": "3:4",
+    "recommendedAssetCategory": "editorial_photography"
   },
   {
+    "slideId": "slide_02",
     "slideNumber": 2,
     "category": "problem_statement",
+    "layoutPattern": "editorial_headline",
     "headline": "Where conventional workflows fracture under real operational load.",
     "visualConcept": "High-contrast serif statement with balanced two-deck body prose and hairline rule.",
-    "flowMcpPrompt": "Minimal architectural composition, editorial photography, high-end studio lighting, deep navy #0F1A2C accents on warm cream #F7F4EE textured background, ultra-sharp detail, 3:4 aspect ratio, subtle geometric structure reflecting where conventional workflows fracture under real operational load.",
-    "aspectRatio": "3:4"
+    "flowMcpPrompt": "Minimal architectural composition, editorial photography, high-end studio lighting, deep navy #0F1A2C accents on warm cream #F7F4EE textured background, ultra-sharp detail, 3:4 aspect ratio, subtle geometric structure reflecting where conventional workflows fracture under real operational load., strictly no text or typography",
+    "negativePrompt": "text, typography, letters, words, numbers, watermarks, signatures, logos, UI screenshots, neon glow, 3D cartoon blobs",
+    "aspectRatio": "3:4",
+    "recommendedAssetCategory": "editorial_photography"
   },
   {
+    "slideId": "slide_03",
     "slideNumber": 3,
     "category": "comparison",
+    "layoutPattern": "comparison_columns",
     "headline": "Ad-hoc execution versus governed system architecture.",
     "visualConcept": "Two-column vertical architectural grid contrasting fragile defaults vs. intentional systems.",
-    "flowMcpPrompt": "Minimal architectural composition, editorial photography, high-end studio lighting, deep navy #0F1A2C accents on warm cream #F7F4EE textured background, ultra-sharp detail, 3:4 aspect ratio, subtle geometric structure reflecting ad-hoc execution versus governed system architecture.",
-    "aspectRatio": "3:4"
+    "flowMcpPrompt": "Minimal architectural composition, editorial photography, high-end studio lighting, deep navy #0F1A2C accents on warm cream #F7F4EE textured background, ultra-sharp detail, 3:4 aspect ratio, subtle geometric structure reflecting ad-hoc execution versus governed system architecture., strictly no text or typography",
+    "negativePrompt": "text, typography, letters, words, numbers, watermarks, signatures, logos, UI screenshots, neon glow, 3D cartoon blobs",
+    "aspectRatio": "3:4",
+    "recommendedAssetCategory": "editorial_photography"
   },
   {
+    "slideId": "slide_04",
     "slideNumber": 4,
     "category": "service_showcase",
+    "layoutPattern": "service_showcase",
     "headline": "Integrated capabilities across automation, systems, and design.",
     "visualConcept": "Structured studio discipline pillar with deliverable specification and geometric badge.",
-    "flowMcpPrompt": "Minimal architectural composition, editorial photography, high-end studio lighting, deep navy #0F1A2C accents on warm cream #F7F4EE textured background, ultra-sharp detail, 3:4 aspect ratio, subtle geometric structure reflecting integrated capabilities across automation, systems, and design.",
-    "aspectRatio": "3:4"
+    "flowMcpPrompt": "Minimal architectural composition, editorial photography, high-end studio lighting, deep navy #0F1A2C accents on warm cream #F7F4EE textured background, ultra-sharp detail, 3:4 aspect ratio, subtle geometric structure reflecting integrated capabilities across automation, systems, and design., strictly no text or typography",
+    "negativePrompt": "text, typography, letters, words, numbers, watermarks, signatures, logos, UI screenshots, neon glow, 3D cartoon blobs",
+    "aspectRatio": "4:3",
+    "recommendedAssetCategory": "product_imagery"
   },
   {
+    "slideId": "slide_05",
     "slideNumber": 5,
     "category": "closing_slide",
+    "layoutPattern": "closing_statement",
     "headline": "Ready to architect systems your team can inspect and own?",
     "visualConcept": "Deep editorial frame with centered or anchored final directive and studio colophon.",
-    "flowMcpPrompt": "Minimal architectural composition, editorial photography, high-end studio lighting, deep navy #0F1A2C accents on warm cream #F7F4EE textured background, ultra-sharp detail, 3:4 aspect ratio, subtle geometric structure reflecting ready to architect systems your team can inspect and own?",
-    "aspectRatio": "3:4"
+    "flowMcpPrompt": "Minimal architectural composition, editorial photography, high-end studio lighting, deep navy #0F1A2C accents on warm cream #F7F4EE textured background, ultra-sharp detail, 3:4 aspect ratio, subtle geometric structure reflecting ready to architect systems your team can inspect and own?, strictly no text or typography",
+    "negativePrompt": "text, typography, letters, words, numbers, watermarks, signatures, logos, UI screenshots, neon glow, 3D cartoon blobs",
+    "aspectRatio": "3:4",
+    "recommendedAssetCategory": "editorial_photography"
   }
 ]

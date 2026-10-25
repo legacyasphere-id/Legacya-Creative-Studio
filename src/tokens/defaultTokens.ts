@@ -162,7 +162,7 @@ export const LAYOUT_PATTERN_META: Record<
   minimal_cover: {
     label: 'Minimal Cover',
     summary: 'Display thesis anchored in the upper-middle register with geometric arc and diagonal index.',
-    maxHeadlineChars: 75,
+    maxHeadlineChars: 105,
     maxBodyChars: 170,
   },
   editorial_headline: {

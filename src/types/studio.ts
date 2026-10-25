@@ -310,6 +310,7 @@ export interface GenerationHistoryEntry {
   timestamp: string;
   operation:
     | 'brief_saved'
+    | 'intelligence_ingested'
     | 'concept_generated'
     | 'storyboard_generated'
     | 'layout_compiled'
@@ -320,6 +321,32 @@ export interface GenerationHistoryEntry {
   mode: 'local_deterministic' | 'gemini_api';
   targetSlideId?: string;
   summary: string;
+}
+
+export interface MarketIntelligenceRecord {
+  id?: string;
+  title?: string;
+  source: string;
+  industrySector: string;
+  coreAudience: string;
+  targetPainPoint: string;
+  provenHook: string;
+  marketProofMetric: string;
+  strategicSolution: string;
+  desiredSlideCount?: number;
+}
+
+export interface SlideImagePromptEntry {
+  slideId: string;
+  slideNumber: number;
+  category: SlideCategory;
+  layoutPattern: LayoutPatternId;
+  headline: string;
+  visualConcept: string;
+  flowMcpPrompt: string;
+  negativePrompt: string;
+  aspectRatio: '1:1' | '3:4' | '4:3' | '16:9';
+  recommendedAssetCategory: StudioAsset['category'];
 }
 
 export interface FigmaExportContract {
@@ -382,3 +409,4 @@ export interface StudioProject {
   handoffState: HandoffStageStatus;
   history: GenerationHistoryEntry[];
 }
+

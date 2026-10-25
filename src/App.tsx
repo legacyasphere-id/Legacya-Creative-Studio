@@ -5,6 +5,7 @@ import { BriefSection } from './components/BriefSection';
 import { ConceptStoryboardSection } from './components/ConceptStoryboardSection';
 import { DashboardSection } from './components/DashboardSection';
 import { ExportHandoffSection } from './components/ExportHandoffSection';
+import { IntelligenceBriefingDrawer } from './components/IntelligenceBriefingDrawer';
 import { SettingsUsageSection } from './components/SettingsUsageSection';
 import { SlideEditorSection } from './components/SlideEditorSection';
 import { INITIAL_SAMPLE_PROJECT } from './data/sampleProject';
@@ -15,6 +16,10 @@ import {
   getNextLayoutPattern,
   regenerateSingleSlideCopyLocal,
 } from './services/creativeEngine';
+import {
+  compileCampaignFromIntelligence,
+  synthesizeBriefFromIntelligence,
+} from './services/intelligenceBridge';
 import { compileSlideSpecification } from './services/layoutEngine';
 import { validateProjectSpecifications } from './services/schemaValidator';
 import { DEFAULT_BRAND_TOKENS } from './tokens/defaultTokens';
@@ -24,6 +29,7 @@ import {
   CreativeConcept,
   GenerationHistoryEntry,
   HandoffStageStatus,
+  MarketIntelligenceRecord,
   StoryboardSlide,
   StudioAsset,
   StudioProject,
@@ -58,6 +64,7 @@ export default function App() {
   );
   const [serverGeminiConfigured, setServerGeminiConfigured] = useState<boolean>(false);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [isIntelligenceDrawerOpen, setIsIntelligenceDrawerOpen] = useState<boolean>(false);
   const [bannerMessage, setBannerMessage] = useState<string | null>(null);
   const copyVariationSeedRef = useRef<number>(0);
 
@@ -142,6 +149,60 @@ export default function App() {
         ...prev.history,
       ],
     }));
+  };
+
+  const handleSynthesizeBriefFromIntelligence = (intel: MarketIntelligenceRecord) => {
+    const synthesizedBrief = synthesizeBriefFromIntelligence(intel);
+    setProject((prev) => ({
+      ...prev,
+      id: `proj_intel_${Date.now().toString().slice(-5)}`,
+      status: 'Draft',
+      updatedAt: new Date().toISOString(),
+      brief: synthesizedBrief,
+      history: [
+        appendHistory(
+          'intelligence_ingested',
+          `Ingested market intelligence "${intel.source}" into 19-field Creative Brief (${synthesizedBrief.desiredSlideCount} slides).`,
+          undefined,
+          'local_deterministic'
+        ),
+        ...prev.history,
+      ],
+    }));
+    setIsIntelligenceDrawerOpen(false);
+    setBannerMessage(
+      `Populated Creative Brief from intelligence source "${intel.source}". Review and click Generate Concept when ready.`
+    );
+    setActiveSection('brief');
+  };
+
+  const handleSynthesizeFullCampaignFromIntelligence = (intel: MarketIntelligenceRecord) => {
+    pushUndoSnapshot(project.storyboard);
+    const compiled = compileCampaignFromIntelligence(
+      intel,
+      project.brandTokens,
+      project.assets
+    );
+    setProject((prev) => ({
+      ...compiled.project,
+      history: [
+        appendHistory(
+          'intelligence_ingested',
+          `Compiled full ${compiled.storyboard.length}-slide campaign from intelligence "${intel.source}" (#3 → #2 Bridge).`,
+          undefined,
+          'local_deterministic'
+        ),
+        ...prev.history,
+      ],
+    }));
+    if (compiled.storyboard[0]) {
+      setSelectedSlideId(compiled.storyboard[0].id);
+    }
+    setIsIntelligenceDrawerOpen(false);
+    setBannerMessage(
+      `Synthesized ${compiled.storyboard.length}-slide campaign, approved concept, Flow MCP prompt matrix, and v1.0.0 contract from "${intel.source}".`
+    );
+    setActiveSection('dashboard');
   };
 
   const handleGenerateConcept = async (briefInput?: CreativeBrief) => {
@@ -847,15 +908,17 @@ export default function App() {
             }}
             onCreateNewProject={handleCreateNewProject}
             onResetSampleProject={handleResetSampleProject}
+            onOpenIntelligenceDrawer={() => setIsIntelligenceDrawerOpen(true)}
           />
         )}
 
         {activeSection === 'brief' && (
           <BriefSection
-            key={project.id}
+            key={`${project.id}_${project.brief.projectName}`}
             brief={project.brief}
             onSaveDraft={handleSaveBriefDraft}
             onGenerateConcept={handleGenerateConcept}
+            onOpenIntelligenceDrawer={() => setIsIntelligenceDrawerOpen(true)}
             isGenerating={isGenerating}
             executionMode={executionMode}
           />
@@ -907,6 +970,7 @@ export default function App() {
           <AssetLibrarySection
             assets={project.assets}
             slides={project.storyboard}
+            brandTokens={project.brandTokens}
             onAddAsset={handleAddAsset}
             onAssignAssetToSlide={handleAssignAssetToSlide}
           />
@@ -929,6 +993,14 @@ export default function App() {
           />
         )}
       </main>
+
+      <IntelligenceBriefingDrawer
+        isOpen={isIntelligenceDrawerOpen}
+        onClose={() => setIsIntelligenceDrawerOpen(false)}
+        onSynthesizeBriefOnly={handleSynthesizeBriefFromIntelligence}
+        onSynthesizeFullCampaign={handleSynthesizeFullCampaignFromIntelligence}
+        isGenerating={isGenerating}
+      />
 
       {/* Quiet Editorial Footer */}
       <footer className="bg-white border-t border-[#D8D2C5] px-6 lg:px-10 py-5 text-xs text-[#5C5852] flex flex-wrap items-center justify-between gap-4">

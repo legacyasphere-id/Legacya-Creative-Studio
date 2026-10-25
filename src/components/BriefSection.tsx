@@ -6,6 +6,7 @@ interface BriefSectionProps {
   brief: CreativeBrief;
   onSaveDraft: (updatedBrief: CreativeBrief) => void;
   onGenerateConcept: (updatedBrief: CreativeBrief) => void;
+  onOpenIntelligenceDrawer: () => void;
   isGenerating: boolean;
   executionMode: 'local_deterministic' | 'gemini_api';
 }
@@ -14,6 +15,7 @@ export const BriefSection: React.FC<BriefSectionProps> = ({
   brief,
   onSaveDraft,
   onGenerateConcept,
+  onOpenIntelligenceDrawer,
   isGenerating,
   executionMode,
 }) => {
@@ -60,11 +62,18 @@ export const BriefSection: React.FC<BriefSectionProps> = ({
             Define Strategic & Editorial Parameters
           </h1>
           <p className="text-sm text-[#5C5852] mt-2 max-w-2xl">
-            Complete the required parameters below. Saving a draft updates project state locally without invoking any generation model.
+            Complete the required parameters below or ingest an upstream Market Intelligence record (#3 → #2). Saving a draft updates project state locally without invoking any generation model.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3 shrink-0">
+          <button
+            type="button"
+            onClick={onOpenIntelligenceDrawer}
+            className="px-4 py-2.5 text-xs font-semibold tracking-wide uppercase border border-[#0F1A2C] bg-[#EBE6DC] text-[#0F1A2C] hover:bg-[#0F1A2C] hover:text-[#F7F4EE] transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+          >
+            Ingest Market Intelligence (#3 → #2)
+          </button>
           <button
             type="button"
             onClick={handleSaveDraftClick}

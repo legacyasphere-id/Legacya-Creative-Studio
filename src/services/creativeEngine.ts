@@ -204,14 +204,22 @@ export function generateStoryboardLocal(
     let suggestedAssetId = '';
 
     switch (cat) {
-      case 'cover_hook':
-        primaryHeadline = concept.centralIdea.slice(0, 72);
+      case 'cover_hook': {
+        const rawCover = concept.centralIdea.trim();
+        if (rawCover.length <= 105) {
+          primaryHeadline = rawCover;
+        } else {
+          const sliced = rawCover.slice(0, 105);
+          const lastSpace = sliced.lastIndexOf(' ');
+          primaryHeadline = `${(lastSpace > 40 ? sliced.slice(0, lastSpace) : sliced).replace(/[.,;:\s]+$/, '')}.`;
+        }
         supportingCopy = `${topicShort.slice(0, 150)}.`;
         microcopy = `${pad} · EDITORIAL THESIS`;
         ctaText = 'SWIPE FOR THE ARCHITECTURAL BREAKDOWN →';
         backgroundTreatment = 'deep_navy';
         suggestedAssetId = 'asset_geo_compass_03';
         break;
+      }
       case 'problem_statement':
         primaryHeadline = 'Where conventional workflows fracture under real operational load.';
         supportingCopy = painShort.slice(0, 210);

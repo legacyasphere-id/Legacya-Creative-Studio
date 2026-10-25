@@ -6,15 +6,22 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import {
   generateConceptLocal,
+  generateDeterministicSlideAsset,
   generateStoryboardLocal,
   regenerateSingleSlideCopyLocal,
 } from './src/services/creativeEngine.ts';
 import {
+  compileCampaignFromIntelligence,
+  validateIntelligenceRecord,
+} from './src/services/intelligenceBridge.ts';
+import {
   CreativeBrief,
   CreativeConcept,
   LayoutPatternId,
+  MarketIntelligenceRecord,
   SlideCategory,
   StoryboardSlide,
+  StudioAsset,
 } from './src/types/studio.ts';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -142,6 +149,23 @@ export function createStudioApiApp() {
       },
     });
 
+  const formatGeminiFallbackReason = (error: unknown, fallbackTarget: string): string => {
+    const raw = error instanceof Error ? error.message : '';
+    if (
+      raw.includes('429') ||
+      raw.includes('RESOURCE_EXHAUSTED') ||
+      raw.toLowerCase().includes('quota')
+    ) {
+      return `Gemini API quota/rate limit reached — fell back to deterministic ${fallbackTarget}.`;
+    }
+    if (raw.trim().startsWith('{') || raw.length > 140) {
+      return `Gemini API unavailable — fell back to deterministic ${fallbackTarget}.`;
+    }
+    return raw
+      ? `${raw} — fell back to deterministic ${fallbackTarget}.`
+      : `Gemini API unavailable — fell back to deterministic ${fallbackTarget}.`;
+  };
+
   app.get('/api/studio/status', (_req, res) => {
     res.json({
       status: 'ok',
@@ -222,7 +246,7 @@ Never invent statistics, fake client quotes, or unverified claims.`,
       res.json({
         concept: fallback,
         source: 'local_deterministic',
-        fallbackReason: error instanceof Error ? error.message : 'Gemini call failed',
+        fallbackReason: formatGeminiFallbackReason(error, 'studio concept engine'),
       });
     }
   });
@@ -299,7 +323,7 @@ Keep headlines concise (<72 chars) and supporting copy under 200 chars. Never in
       res.json({
         storyboard: fallback,
         source: 'local_deterministic',
-        fallbackReason: error instanceof Error ? error.message : 'Gemini storyboard call failed',
+        fallbackReason: formatGeminiFallbackReason(error, 'studio storyboard engine'),
       });
     }
   });
@@ -372,7 +396,133 @@ Provide a fresh, restrained editorial headline (<72 chars) and supporting copy (
       res.json({
         copy: fallback,
         source: 'local_deterministic',
-        fallbackReason: error instanceof Error ? error.message : 'Gemini slide-copy call failed',
+        fallbackReason: formatGeminiFallbackReason(error, 'slide copy variation'),
+      });
+    }
+  });
+
+  app.post('/api/studio/intelligence-bridge', async (req, res) => {
+    const intelligence = req.body?.intelligence as MarketIntelligenceRecord | undefined;
+    if (!intelligence || typeof intelligence !== 'object') {
+      res.status(400).json({ error: 'Valid market intelligence record is required.' });
+      return;
+    }
+
+    const check = validateIntelligenceRecord(intelligence);
+    if (!check.valid) {
+      res.status(400).json({
+        error: 'Market intelligence validation failed.',
+        fieldErrors: check.fieldErrors,
+      });
+      return;
+    }
+
+    try {
+      const compiled = compileCampaignFromIntelligence(intelligence);
+      res.json({
+        brief: compiled.brief,
+        concept: compiled.concept,
+        storyboard: compiled.storyboard,
+        contract: compiled.contract,
+        promptMatrix: compiled.promptMatrix,
+        source: 'local_deterministic',
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: error instanceof Error ? error.message : 'Intelligence campaign synthesis failed.',
+      });
+    }
+  });
+
+  app.post('/api/gemini/image', async (req, res) => {
+    const slide = req.body?.slide as StoryboardSlide | undefined;
+    const customPrompt = typeof req.body?.prompt === 'string' ? req.body.prompt.trim() : '';
+    const requestedRatio = req.body?.aspectRatio;
+    const aspectRatio: StudioAsset['aspectRatio'] =
+      requestedRatio === '1:1' ||
+      requestedRatio === '3:4' ||
+      requestedRatio === '4:3' ||
+      requestedRatio === '16:9'
+        ? requestedRatio
+        : '4:3';
+
+    if (!slide || !slide.id) {
+      res.status(400).json({ error: 'Valid target slide is required for asset generation.' });
+      return;
+    }
+
+    const baseDirection =
+      customPrompt ||
+      `Minimalist architectural editorial photography for Slide ${String(slide.slideNumber).padStart(2, '0')} (${slide.primaryHeadline}), warm cream #F7F4EE travertine and deep navy #0F1A2C structural steel, directional natural studio lighting`;
+    const strictPrompt = `${baseDirection}. CRITICAL: Do NOT include any text, letters, numbers, words, watermarks, or logos inside the image.`;
+
+    if (!isGeminiConfigured()) {
+      const fallbackAsset = generateDeterministicSlideAsset(slide, baseDirection);
+      res.json({
+        asset: {
+          ...fallbackAsset,
+          aspectRatio,
+        },
+        source: 'local_deterministic',
+        fallbackReason: 'GEMINI_API_KEY is not configured on the server; synthesized deterministic studio vector plate.',
+      });
+      return;
+    }
+
+    try {
+      const ai = createGeminiClient();
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.1-flash-lite-image',
+        contents: {
+          parts: [{ text: strictPrompt }],
+        },
+        config: {
+          imageConfig: {
+            aspectRatio,
+          },
+        },
+      });
+
+      let imageDataUrl = '';
+      const parts = response.candidates?.[0]?.content?.parts || [];
+      for (const part of parts) {
+        if (part.inlineData?.data) {
+          const mime = part.inlineData.mimeType || 'image/png';
+          imageDataUrl = `data:${mime};base64,${part.inlineData.data}`;
+          break;
+        }
+      }
+
+      if (!imageDataUrl) {
+        throw new Error('No inline image data returned from Gemini image model.');
+      }
+
+      const generatedAsset: StudioAsset = {
+        id: `asset_gemini_slide_${String(slide.slideNumber).padStart(2, '0')}_${Date.now()}`,
+        name: `Slide ${String(slide.slideNumber).padStart(2, '0')} Editorial Study`,
+        category: 'editorial_photography',
+        intendedSlideId: slide.id,
+        prompt: baseDirection,
+        status: 'ready',
+        provenance: 'Gemini API (gemini-3.1-flash-lite-image · Zero Baked-In Text)',
+        aspectRatio,
+        previewDataUrl: imageDataUrl,
+        createdAt: new Date().toISOString(),
+      };
+
+      res.json({
+        asset: generatedAsset,
+        source: 'gemini_api',
+      });
+    } catch (error) {
+      const fallbackAsset = generateDeterministicSlideAsset(slide, baseDirection);
+      res.json({
+        asset: {
+          ...fallbackAsset,
+          aspectRatio,
+        },
+        source: 'local_deterministic',
+        fallbackReason: formatGeminiFallbackReason(error, 'studio vector plate'),
       });
     }
   });

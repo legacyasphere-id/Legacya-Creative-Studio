@@ -5,6 +5,7 @@ import {
   FIGMA_PLUGIN_UI_HTML,
 } from '../data/figmaPluginSource';
 import { buildFigmaExportContract } from '../services/exportSerializer';
+import { generateStandaloneHtmlCarouselPreview } from '../services/intelligenceBridge';
 import {
   validateExportContractJson,
   validateProjectSpecifications,
@@ -50,6 +51,22 @@ export const ExportHandoffSection: React.FC<ExportHandoffSectionProps> = ({
     onRecordExport();
     setCopiedNotice(
       `Exported validated 1.0.0 JSON file (${project.id}_figma_contract_v1.0.0.json). Note: This downloads the JSON contract; import it into Figma using the companion plugin below.`
+    );
+  };
+
+  const handleDownloadHtmlPreview = () => {
+    const htmlContent = generateStandaloneHtmlCarouselPreview(project);
+    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${project.id}_carousel_preview.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setCopiedNotice(
+      `Downloaded standalone editorial HTML preview (${project.id}_carousel_preview.html).`
     );
   };
 
@@ -135,6 +152,13 @@ export const ExportHandoffSection: React.FC<ExportHandoffSectionProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-3 shrink-0">
+          <button
+            type="button"
+            onClick={handleDownloadHtmlPreview}
+            className="px-4 py-2.5 text-xs font-semibold uppercase tracking-wider border border-[#0F1A2C] bg-[#EBE6DC] text-[#0F1A2C] hover:bg-[#0F1A2C] hover:text-[#F7F4EE] transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+          >
+            Download HTML Preview
+          </button>
           <button
             type="button"
             onClick={handleCopyJson}
