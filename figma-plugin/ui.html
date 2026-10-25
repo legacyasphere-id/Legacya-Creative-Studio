@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>LEGACYA SPHERE Carousel Importer</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Plus Jakarta Sans", sans-serif;
+      background: #F7F4EE;
+      color: #121212;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 { font-size: 16px; margin: 0 0 6px; letter-spacing: 0.04em; text-transform: uppercase; }
+    p { font-size: 12px; color: #5C5852; margin: 0 0 14px; line-height: 1.5; }
+    textarea {
+      width: 100%;
+      height: 190px;
+      box-sizing: border-box;
+      border: 1px solid #D8D2C5;
+      background: #FFFFFF;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 11px;
+      margin-bottom: 12px;
+    }
+    .reimport-options {
+      border: 1px solid #D8D2C5;
+      background: #FFFFFF;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+      font-size: 12px;
+    }
+    .reimport-options label {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      color: #121212;
+    }
+    .reimport-options .hint {
+      display: block;
+      font-weight: 400;
+      font-size: 11px;
+      color: #5C5852;
+      margin-top: 3px;
+    }
+    .preview-box {
+      border: 1px solid #D8D2C5;
+      background: #FFFFFF;
+      padding: 12px;
+      margin-bottom: 12px;
+      font-size: 12px;
+      display: none;
+    }
+    .actions { display: flex; gap: 8px; }
+    button {
+      padding: 9px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid #121212;
+      background: #FFFFFF;
+      color: #121212;
+      cursor: pointer;
+    }
+    button.primary { background: #0F1A2C; color: #F7F4EE; border-color: #0F1A2C; }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+    .status {
+      margin-top: 12px;
+      font-size: 11px;
+      white-space: pre-wrap;
+      line-height: 1.5;
+      max-height: 180px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>LEGACYA SPHERE · Native Importer</h1>
+  <p>Paste a validated 1.0.0 JSON export contract. Re-imports reconcile layers by stable ID and baseline snapshot without destroying manual Figma edits.</p>
+  <textarea id="jsonInput" placeholder="Paste LEGACYA SPHERE 1.0.0 JSON export here..."></textarea>
+
+  <div class="reimport-options">
+    <label for="preserveManualEditsToggle">
+      <input type="checkbox" id="preserveManualEditsToggle" checked />
+      <span>
+        Preserve manual Figma edits on re-import (Recommended)
+        <span class="hint">Compares current Figma layers against stored baseline snapshots. Uncheck only to force-overwrite manual designer changes.</span>
+      </span>
+    </label>
+  </div>
+
+  <div id="previewBox" class="preview-box"></div>
+  <div class="actions">
+    <button id="validateBtn">1. Validate & Preview</button>
+    <button id="importBtn" class="primary" disabled>2. Confirm & Reconcile Draft Page</button>
+  </div>
+  <div id="statusBox" class="status"></div>
+
+  <script>
+    let validatedPayload = null;
+    const jsonInput = document.getElementById('jsonInput');
+    const preserveManualEditsToggle = document.getElementById('preserveManualEditsToggle');
+    const previewBox = document.getElementById('previewBox');
+    const validateBtn = document.getElementById('validateBtn');
+    const importBtn = document.getElementById('importBtn');
+    const statusBox = document.getElementById('statusBox');
+
+    validateBtn.onclick = () => {
+      validatedPayload = null;
+      importBtn.disabled = true;
+      try {
+        const parsed = JSON.parse(jsonInput.value);
+        if (parsed.schemaVersion !== '1.0.0') {
+          throw new Error('Unsupported schemaVersion: ' + parsed.schemaVersion);
+        }
+        if (!Array.isArray(parsed.slides) || parsed.slides.length === 0) {
+          throw new Error('Contract contains zero slides.');
+        }
+        validatedPayload = parsed;
+        const preserveMode = preserveManualEditsToggle.checked
+          ? 'Preserve manual Figma edits (3-way baseline snapshot reconciliation)'
+          : 'Force-overwrite managed layers with incoming contract';
+        previewBox.style.display = 'block';
+        previewBox.innerHTML =
+          '<strong>Validated Project:</strong> ' + parsed.projectName + '<br/>' +
+          '<strong>Slides:</strong> ' + parsed.slides.length + ' independent frames<br/>' +
+          '<strong>Target Page:</strong> [Draft] LEGACYA SPHERE — ' + parsed.projectName + '<br/>' +
+          '<strong>Re-import Mode:</strong> ' + preserveMode;
+        statusBox.textContent = 'Schema 1.0.0 verified. Ready to reconcile native Figma layers.';
+        importBtn.disabled = false;
+      } catch (err) {
+        previewBox.style.display = 'none';
+        statusBox.textContent = 'Validation Error: ' + err.message;
+      }
+    };
+
+    importBtn.onclick = () => {
+      if (!validatedPayload) return;
+      const preserveManualEdits = Boolean(preserveManualEditsToggle.checked);
+      statusBox.textContent = 'Reconciling editable frames and layers in Figma...';
+      parent.postMessage(
+        {
+          pluginMessage: {
+            type: 'IMPORT_CONTRACT',
+            payload: validatedPayload,
+            preserveManualEdits: preserveManualEdits,
+          },
+        },
+        '*'
+      );
+    };
+
+    window.onmessage = (event) => {
+      const msg = event.data.pluginMessage;
+      if (!msg) return;
+      if (msg.type === 'IMPORT_ERROR') {
+        statusBox.textContent = 'Import failed: ' + msg.message;
+      } else if (msg.type === 'IMPORT_COMPLETE') {
+        const s = msg.summary;
+        const lines = [
+          'Completed on page "' + s.draftPageName + '".',
+          'Frames — Created: ' + s.createdFrames + ' | Updated: ' + s.updatedFrames,
+          'Layers — Created: ' + s.createdLayers +
+            ' | Updated: ' + (s.updatedLayers || 0) +
+            ' | Preserved: ' + (s.preservedLayers || 0) +
+            ' | Removed: ' + (s.removedLayers || 0) +
+            ' | Unchanged: ' + (s.unchangedLayers || 0),
+        ];
+        if (Array.isArray(s.conflicts) && s.conflicts.length > 0) {
+          lines.push('\nReconciliation & Preserved Edits:\n- ' + s.conflicts.join('\n- '));
+        }
+        if (Array.isArray(s.warnings) && s.warnings.length > 0) {
+          lines.push('\nWarnings:\n- ' + s.warnings.join('\n- '));
+        }
+        statusBox.textContent = lines.join('\n');
+      }
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+[
+  {
+    "slideNumber": 1,
+    "category": "cover_hook",
+    "headline": "Intentional systems architecture transforms Why High-Performing Brands A",
+    "visualConcept": "Display thesis anchored in the upper-middle register with geometric arc and diagonal index.",
+    "flowMcpPrompt": "Minimal architectural composition, editorial photography, high-end studio lighting, deep navy #0F1A2C accents on warm cream #F7F4EE textured background, ultra-sharp detail, 3:4 aspect ratio, subtle geometric structure reflecting intentional systems architecture transforms why high-performing brands a",
+    "aspectRatio": "3:4"
+  },
+  {
+    "slideNumber": 2,
+    "category": "problem_statement",
+    "headline": "Where conventional workflows fracture under real operational load.",
+    "visualConcept": "High-contrast serif statement with balanced two-deck body prose and hairline rule.",
+    "flowMcpPrompt": "Minimal architectural composition, editorial photography, high-end studio lighting, deep navy #0F1A2C accents on warm cream #F7F4EE textured background, ultra-sharp detail, 3:4 aspect ratio, subtle geometric structure reflecting where conventional workflows fracture under real operational load.",
+    "aspectRatio": "3:4"
+  },
+  {
+    "slideNumber": 3,
+    "category": "comparison",
+    "headline": "Ad-hoc execution versus governed system architecture.",
+    "visualConcept": "Two-column vertical architectural grid contrasting fragile defaults vs. intentional systems.",
+    "flowMcpPrompt": "Minimal architectural composition, editorial photography, high-end studio lighting, deep navy #0F1A2C accents on warm cream #F7F4EE textured background, ultra-sharp detail, 3:4 aspect ratio, subtle geometric structure reflecting ad-hoc execution versus governed system architecture.",
+    "aspectRatio": "3:4"
+  },
+  {
+    "slideNumber": 4,
+    "category": "service_showcase",
+    "headline": "Integrated capabilities across automation, systems, and design.",
+    "visualConcept": "Structured studio discipline pillar with deliverable specification and geometric badge.",
+    "flowMcpPrompt": "Minimal architectural composition, editorial photography, high-end studio lighting, deep navy #0F1A2C accents on warm cream #F7F4EE textured background, ultra-sharp detail, 3:4 aspect ratio, subtle geometric structure reflecting integrated capabilities across automation, systems, and design.",
+    "aspectRatio": "3:4"
+  },
+  {
+    "slideNumber": 5,
+    "category": "closing_slide",
+    "headline": "Ready to architect systems your team can inspect and own?",
+    "visualConcept": "Deep editorial frame with centered or anchored final directive and studio colophon.",
+    "flowMcpPrompt": "Minimal architectural composition, editorial photography, high-end studio lighting, deep navy #0F1A2C accents on warm cream #F7F4EE textured background, ultra-sharp detail, 3:4 aspect ratio, subtle geometric structure reflecting ready to architect systems your team can inspect and own?",
+    "aspectRatio": "3:4"
+  }
+]
