@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
-    "start": "tsx server.ts",
+    "start": "node server.ts",
     "build": "vite build && npm run build:plugin",
     "build:plugin": "esbuild figma-plugin/code.ts --bundle --target=es2020 --outfile=figma-plugin/code.js",
     "preview": "vite preview",

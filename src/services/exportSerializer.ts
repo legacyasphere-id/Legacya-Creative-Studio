@@ -1,5 +1,5 @@
-import { FigmaExportContract, StudioProject } from '../types/studio';
-import { compileSlideSpecification } from './layoutEngine';
+import type { FigmaExportContract, StudioProject } from '../types/studio.ts';
+import { compileSlideSpecification } from './layoutEngine.ts';
 
 /**
  * Serializes a StudioProject into the versioned 1.0.0 FigmaExportContract JSON structure.

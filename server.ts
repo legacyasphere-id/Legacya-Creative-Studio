@@ -14,7 +14,7 @@ import {
   compileCampaignFromIntelligence,
   validateIntelligenceRecord,
 } from './src/services/intelligenceBridge.ts';
-import {
+import type {
   CreativeBrief,
   CreativeConcept,
   LayoutPatternId,

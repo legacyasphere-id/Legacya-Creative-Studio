@@ -1,6 +1,6 @@
-import { SAMPLE_STUDIO_ASSETS } from '../data/sampleProject';
-import { DEFAULT_BRAND_TOKENS } from '../tokens/defaultTokens';
-import {
+import { SAMPLE_STUDIO_ASSETS } from '../data/sampleProject.ts';
+import { DEFAULT_BRAND_TOKENS } from '../tokens/defaultTokens.ts';
+import type {
   BrandSystemTokens,
   CreativeBrief,
   FigmaExportContract,
@@ -10,14 +10,14 @@ import {
   StudioAsset,
   StudioProject,
   ValidationReport,
-} from '../types/studio';
+} from '../types/studio.ts';
 import {
   generateConceptLocal,
   generateStoryboardLocal,
   validateBriefForm,
-} from './creativeEngine';
-import { buildFigmaExportContract } from './exportSerializer';
-import { validateExportContractJson } from './schemaValidator';
+} from './creativeEngine.ts';
+import { buildFigmaExportContract } from './exportSerializer.ts';
+import { validateExportContractJson } from './schemaValidator.ts';
 
 export const DEFAULT_INTELLIGENCE: MarketIntelligenceRecord = {
   id: 'intel_preset_agency_retainer',

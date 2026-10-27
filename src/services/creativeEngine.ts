@@ -1,12 +1,12 @@
-import { LAYOUT_PATTERN_META, SLIDE_CATEGORY_META } from '../tokens/defaultTokens';
-import {
+import { LAYOUT_PATTERN_META, SLIDE_CATEGORY_META } from '../tokens/defaultTokens.ts';
+import type {
   CreativeBrief,
   CreativeConcept,
   LayoutPatternId,
   SlideCategory,
   StoryboardSlide,
   StudioAsset,
-} from '../types/studio';
+} from '../types/studio.ts';
 
 export interface BriefValidationResult {
   valid: boolean;
