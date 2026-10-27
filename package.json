@@ -10,6 +10,8 @@
     "build:plugin": "esbuild figma-plugin/code.ts --bundle --target=es2020 --outfile=figma-plugin/code.js",
     "preview": "vite preview",
     "test": "tsx --test src/utils/studioLogic.test.ts",
+    "qa:audit": "tsx scripts/qa_audit.ts",
+    "test:e2e": "bash scripts/e2e_playwright_verify.sh",
     "generate:campaign": "tsx scripts/intel_to_campaign.ts",
     "clean": "rm -rf dist server.js figma-plugin/code.js",
     "lint": "tsc --noEmit"

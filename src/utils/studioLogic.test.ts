@@ -564,5 +564,271 @@ test('Market Intelligence Bridge (#3 -> #2) validates inputs, synthesizes valid 
   assert.equal(sampleMatrix[0].slideId, 'slide_01');
 });
 
+test('HyperFrames Video-as-Code engine compiles deterministic HTML compositions, SMPTE timecodes, 90%/80% safe boxes, frame.md camera specs, and passes 12-rule contract audit', async () => {
+  const {
+    compileHyperframesBundle,
+    computeSafeBoxes,
+    evaluateElementMotionAtTime,
+    formatSmpteTimecode,
+  } = await import('../services/hyperframesEngine');
+
+  // 1. SMPTE timecode accuracy at 30fps and 60fps
+  assert.equal(formatSmpteTimecode(0, 30), '00:00:00');
+  assert.equal(formatSmpteTimecode(1.5, 30), '00:01:15');
+  assert.equal(formatSmpteTimecode(62.2, 30), '01:02:06');
+  assert.equal(formatSmpteTimecode(1.5, 60), '00:01:30');
+
+  // 2. 90% Action-Safe & 80% Title-Safe boxes on 1080x1440
+  const { actionSafeBox, titleSafeBox } = computeSafeBoxes(1080, 1440);
+  assert.deepEqual(actionSafeBox, { x: 54, y: 72, width: 972, height: 1296 });
+  assert.deepEqual(titleSafeBox, { x: 108, y: 144, width: 864, height: 1152 });
+
+  // 3. Compile full HyperFrames bundle from sample project
+  const specs = INITIAL_SAMPLE_PROJECT.storyboard.map((slide) =>
+    compileSlideSpecification(
+      slide,
+      INITIAL_SAMPLE_PROJECT.storyboard.length,
+      DEFAULT_BRAND_TOKENS,
+      INITIAL_SAMPLE_PROJECT.assets
+    )
+  );
+  const bundle = compileHyperframesBundle(INITIAL_SAMPLE_PROJECT, specs, undefined, 30);
+
+  assert.equal(bundle.fps, 30);
+  assert.equal(bundle.width, 1080);
+  assert.equal(bundle.height, 1440);
+  assert.equal(bundle.scenes.length, 7);
+  assert.equal(bundle.totalDurationSec, 25.5); // 2 bookends @ 4.0s + 5 interior @ 3.5s = 25.5s
+  assert.equal(bundle.totalFrames, 765);
+  assert.equal(bundle.checkReport.valid, true);
+  assert.equal(bundle.checkReport.errors.length, 0);
+  assert.equal(Boolean(bundle.rootIndexHtml.includes('window.__timelines["main"]')), true);
+  assert.equal(Boolean(bundle.rootIndexHtml.includes('window.__hyperframes')), true);
+  assert.equal(Boolean(bundle.frameMdSpec.includes('schema: hyperframes/frame.md/v1')), true);
+
+  // 4. Deterministic f(t) evaluator purity and [start, start + duration) boundary check
+  const sampleHeadline = specs[0].elements.find((e) => e.id === 'slide_01_headline')!;
+  const beforeClip = evaluateElementMotionAtTime(sampleHeadline, 0.02, 4.0, 'editorial_reveal', 1);
+  assert.equal(beforeClip.visible, false);
+  assert.equal(beforeClip.opacity, 0);
+
+  const midClipA = evaluateElementMotionAtTime(sampleHeadline, 1.2, 4.0, 'editorial_reveal', 1);
+  const midClipB = evaluateElementMotionAtTime(sampleHeadline, 1.2, 4.0, 'editorial_reveal', 1);
+  assert.deepEqual(midClipA, midClipB);
+  assert.equal(midClipA.visible, true);
+  assert.equal(midClipA.opacity, 1);
+
+  const afterClip = evaluateElementMotionAtTime(sampleHeadline, 4.0, 4.0, 'editorial_reveal', 1);
+  assert.equal(afterClip.visible, false);
+});
+
+test('API key & secret leak security audit verifies zero credential exposure across server endpoints, client source, and exported studio artifacts', async () => {
+  const {
+    auditClientSourceContent,
+    auditExportedArtifactsForLeaks,
+    scanContentForSecrets,
+  } = await import('../services/securityAudit');
+  const { createStudioApiApp } = await import('../../server');
+
+  // 1. Secret scanner detects known token patterns and canary secrets
+  const detectedGoogle = scanContentForSecrets(
+    'const key = "AIzaSyD9876543210abcdefghijklmnopqrstuv";',
+    'mock.ts'
+  );
+  assert.equal(detectedGoogle.length, 1);
+  assert.equal(detectedGoogle[0].ruleId, 'google_api_key');
+
+  const detectedGithub = scanContentForSecrets(
+    'Authorization: token ghp_1234567890abcdefghijklmnopqrstuvwx',
+    'mock.ts'
+  );
+  assert.equal(detectedGithub.length, 1);
+  assert.equal(detectedGithub[0].ruleId, 'github_pat_classic');
+
+  // 2. Client source guardrails catch direct @google/genai imports and process.env.GEMINI_API_KEY
+  const badClientSource = `
+    import { GoogleGenAI } from '@google/genai';
+    const k = process.env.GEMINI_API_KEY;
+  `;
+  const clientFindings = auditClientSourceContent(badClientSource, 'src/BadComponent.tsx');
+  assert.equal(clientFindings.length, 2);
+
+  // 3. Exported studio artifacts (Figma 1.0.0 JSON, HyperFrames HTML/frame.md/timeline.json, Carousel HTML) contain zero leaks
+  const canary = 'AIzaSyCANARY_TEST_SECRET_KEY_000111222333';
+  const artifactReport = auditExportedArtifactsForLeaks(INITIAL_SAMPLE_PROJECT, canary);
+  assert.equal(artifactReport.passed, true);
+  assert.equal(artifactReport.findings.length, 0);
+  assert.equal(artifactReport.artifactsScanned.length, 5);
+
+  // 4. Live HTTP server endpoints never leak the canary GEMINI_API_KEY in responses or error fallback messages
+  const prevKey = process.env.GEMINI_API_KEY;
+  process.env.GEMINI_API_KEY = canary;
+  const app = createStudioApiApp();
+  const server = app.listen(0);
+
+  try {
+    const addr = server.address();
+    const port = typeof addr === 'object' && addr ? addr.port : 3098;
+    const baseUrl = `http://127.0.0.1:${port}`;
+
+    const statusRes = await fetch(`${baseUrl}/api/studio/status`);
+    const statusText = await statusRes.text();
+    assert.equal(statusText.includes(canary), false);
+    const statusJson = JSON.parse(statusText);
+    assert.equal(statusJson.geminiConfigured, true);
+    assert.equal('apiKey' in statusJson, false);
+
+    const conceptRes = await fetch(`${baseUrl}/api/gemini/concept`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ brief: INITIAL_SAMPLE_PROJECT.brief }),
+    });
+    const conceptText = await conceptRes.text();
+    assert.equal(conceptRes.status, 200);
+    assert.equal(conceptText.includes(canary), false);
+
+    const imageRes = await fetch(`${baseUrl}/api/gemini/image`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        slide: INITIAL_SAMPLE_PROJECT.storyboard[0],
+        prompt: 'Architectural travertine study',
+        aspectRatio: '4:3',
+      }),
+    });
+    const imageText = await imageRes.text();
+    assert.equal(imageRes.status, 200);
+    assert.equal(imageText.includes(canary), false);
+  } finally {
+    server.close();
+    process.env.GEMINI_API_KEY = prevKey;
+  }
+});
+
+test('End-to-End 9-stage studio lifecycle: Intelligence (#3 -> #2) -> Brief -> Concept -> Storyboard -> Scoped Slide Edit -> Layout -> Figma Reconciler -> HyperFrames Bundle', async () => {
+  const { INTELLIGENCE_PRESETS, compileCampaignFromIntelligence } = await import(
+    '../services/intelligenceBridge'
+  );
+  const {
+    generateDeterministicSlideAsset,
+    getNextLayoutPattern,
+    regenerateSingleSlideCopyLocal,
+  } = await import('../services/creativeEngine');
+  const { compileHyperframesBundle } = await import('../services/hyperframesEngine');
+  const { runFigmaContractImport } = await import('../../figma-plugin/code');
+
+  // Stage 1 & 2: Ingest Market Intelligence preset (#3 -> #2) and synthesize campaign
+  const intelPreset = INTELLIGENCE_PRESETS[1]; // 6-slide Native Figma Contract preset
+  const compiledCampaign = compileCampaignFromIntelligence(intelPreset);
+  assert.equal(compiledCampaign.storyboard.length, 6);
+  assert.equal(compiledCampaign.concept.approved, true);
+  assert.equal(compiledCampaign.contractValidation.valid, true);
+
+  // Stage 3 & 4: Perform scoped single-slide copy regeneration, layout cycle, and SVG plate synthesis on Slide 02
+  const targetSlide = structuredClone(compiledCampaign.storyboard[1]);
+  const freshCopy = regenerateSingleSlideCopyLocal(targetSlide, compiledCampaign.brief, 2);
+  targetSlide.primaryHeadline = freshCopy.primaryHeadline;
+  targetSlide.supportingCopy = freshCopy.supportingCopy;
+  targetSlide.layoutPattern = getNextLayoutPattern(targetSlide.layoutPattern);
+  const generatedPlate = generateDeterministicSlideAsset(targetSlide, 'Editorial geometry study');
+  targetSlide.suggestedAssetId = generatedPlate.id;
+
+  const updatedProject = structuredClone(INITIAL_SAMPLE_PROJECT);
+  updatedProject.brief = compiledCampaign.brief;
+  updatedProject.concept = compiledCampaign.concept;
+  updatedProject.storyboard = [
+    compiledCampaign.storyboard[0],
+    targetSlide,
+    ...compiledCampaign.storyboard.slice(2),
+  ];
+  updatedProject.assets = [...updatedProject.assets, generatedPlate];
+
+  // Stage 5 & 6: Compile 1080x1440 specifications and validate 1.0.0 schema
+  const specs = updatedProject.storyboard.map((s) =>
+    compileSlideSpecification(
+      s,
+      updatedProject.storyboard.length,
+      updatedProject.brandTokens,
+      updatedProject.assets
+    )
+  );
+  const validation = validateProjectSpecifications(updatedProject, specs);
+  assert.equal(validation.valid, true);
+  assert.equal(validation.errors.length, 0);
+
+  // Stage 7: Export 1.0.0 contract and verify Figma plugin import
+  const contract = buildFigmaExportContract(updatedProject);
+  const contractCheck = validateExportContractJson(JSON.stringify(contract));
+  assert.equal(contractCheck.valid, true);
+
+  const mockPluginData = new Map<string, Map<string, string>>();
+  let idSeq = 1;
+  const makeNode = (type: string): any => {
+    const nodeId = `n_${idSeq++}`;
+    mockPluginData.set(nodeId, new Map());
+    return {
+      id: nodeId,
+      type,
+      name: '',
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 100,
+      opacity: 1,
+      fills: [],
+      strokes: [],
+      children: [] as any[],
+      removed: false,
+      appendChild(c: any) {
+        this.children.push(c);
+      },
+      resize(w: number, h: number) {
+        this.width = w;
+        this.height = h;
+      },
+      remove() {
+        this.removed = true;
+      },
+      getPluginData(k: string) {
+        return mockPluginData.get(nodeId)?.get(k) || '';
+      },
+      setPluginData(k: string, v: string) {
+        mockPluginData.get(nodeId)?.set(k, v);
+      },
+    };
+  };
+  const mockFigma: any = {
+    root: {
+      children: [] as any[],
+      appendChild(p: any) {
+        this.children.push(p);
+      },
+    },
+    currentPage: null,
+    loadFontAsync: async () => {},
+    createPage: () => makeNode('PAGE'),
+    createFrame: () => makeNode('FRAME'),
+    createText: () => makeNode('TEXT'),
+    createRectangle: () => makeNode('RECTANGLE'),
+    createEllipse: () => makeNode('ELLIPSE'),
+    createLine: () => makeNode('LINE'),
+    createNodeFromSvg: () => makeNode('FRAME'),
+    createImage: () => ({ hash: 'h1' }),
+  };
+  const figmaSummary = await runFigmaContractImport(mockFigma, contract, {
+    preserveManualEdits: true,
+  });
+  assert.equal(figmaSummary.createdFrames, 6);
+  assert.equal(figmaSummary.conflicts.length, 0);
+
+  // Stage 8 & 9: Compile HyperFrames Video-as-Code bundle and verify 0 contract errors
+  const hfBundle = compileHyperframesBundle(updatedProject, specs, undefined, 30);
+  assert.equal(hfBundle.scenes.length, 6);
+  assert.equal(hfBundle.checkReport.valid, true);
+  assert.equal(hfBundle.checkReport.errors.length, 0);
+});
+
+
+
 
 

@@ -37,6 +37,7 @@ export type WorkspaceSection =
   | 'editor'
   | 'brand'
   | 'assets'
+  | 'hyperframes'
   | 'export'
   | 'settings';
 
@@ -317,10 +318,98 @@ export interface GenerationHistoryEntry {
     | 'slide_copy_regenerated'
     | 'slide_layout_regenerated'
     | 'asset_generated'
+    | 'hyperframes_compiled'
     | 'json_exported';
   mode: 'local_deterministic' | 'gemini_api';
   targetSlideId?: string;
   summary: string;
+}
+
+export type HyperframesMotionPreset =
+  | 'editorial_reveal'
+  | 'kinetic_stagger'
+  | 'architectural_wipe'
+  | 'precision_cut';
+
+export interface HyperframesSlideTiming {
+  slideId: string;
+  durationSec: number;
+  motionPreset: HyperframesMotionPreset;
+  includeCaptionTrack: boolean;
+}
+
+export interface HyperframesClipDescriptor {
+  id: string;
+  compositionId: string;
+  slideId: string;
+  slideNumber: number;
+  layerId: string;
+  label: string;
+  role: 'scene_host' | 'background' | 'geometry' | 'headline' | 'body' | 'caption_cta';
+  trackIndex: number;
+  trackKind: 'graphics' | 'captions';
+  localStart: number;
+  localDuration: number;
+  absStart: number;
+  absEnd: number;
+  zIndex: number;
+  varTextId?: string;
+  motionPreset: HyperframesMotionPreset;
+}
+
+export interface HyperframesLintFinding {
+  code: string;
+  severity: 'error' | 'warning';
+  compositionId: string;
+  clipId?: string;
+  message: string;
+  fix: string;
+}
+
+export interface HyperframesCheckReport {
+  valid: boolean;
+  checkedAt: string;
+  fps: number;
+  width: number;
+  height: number;
+  totalDurationSec: number;
+  totalFrames: number;
+  totalCompositions: number;
+  totalClipsChecked: number;
+  actionSafeBox: { x: number; y: number; width: number; height: number };
+  titleSafeBox: { x: number; y: number; width: number; height: number };
+  errors: HyperframesLintFinding[];
+  warnings: HyperframesLintFinding[];
+}
+
+export interface HyperframesCompositionBundle {
+  projectId: string;
+  projectName: string;
+  fps: 30 | 60;
+  width: number;
+  height: number;
+  totalDurationSec: number;
+  totalFrames: number;
+  variables: Array<{
+    id: string;
+    type: 'string' | 'color';
+    label: string;
+    default: string;
+  }>;
+  scenes: Array<{
+    compositionId: string;
+    slideId: string;
+    slideNumber: number;
+    startSec: number;
+    durationSec: number;
+    motionPreset: HyperframesMotionPreset;
+    templateHtml: string;
+  }>;
+  clips: HyperframesClipDescriptor[];
+  rootIndexHtml: string;
+  frameMdSpec: string;
+  timelineJson: string;
+  checkReport: HyperframesCheckReport;
 }
 
 export interface MarketIntelligenceRecord {
