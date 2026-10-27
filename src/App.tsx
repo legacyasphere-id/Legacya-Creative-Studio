@@ -5,6 +5,7 @@ import { BriefSection } from './components/BriefSection';
 import { ConceptStoryboardSection } from './components/ConceptStoryboardSection';
 import { DashboardSection } from './components/DashboardSection';
 import { ExportHandoffSection } from './components/ExportHandoffSection';
+import { HyperframesSection } from './components/HyperframesSection';
 import { IntelligenceBriefingDrawer } from './components/IntelligenceBriefingDrawer';
 import { SettingsUsageSection } from './components/SettingsUsageSection';
 import { SlideEditorSection } from './components/SlideEditorSection';
@@ -727,6 +728,17 @@ export default function App() {
     setActiveSection('dashboard');
   };
 
+  const handleRecordHyperframesExport = (summary: string) => {
+    setProject((prev) => ({
+      ...prev,
+      updatedAt: new Date().toISOString(),
+      history: [
+        appendHistory('hyperframes_compiled', summary, undefined, 'local_deterministic'),
+        ...prev.history,
+      ],
+    }));
+  };
+
   const workspaceTabs: Array<{ id: WorkspaceSection; code: string; label: string }> = [
     { id: 'dashboard', code: 'A', label: 'Dashboard' },
     { id: 'brief', code: 'B', label: 'Creative Brief' },
@@ -734,8 +746,9 @@ export default function App() {
     { id: 'editor', code: 'D', label: 'Slide Editor & Preview' },
     { id: 'brand', code: 'E', label: 'Brand System' },
     { id: 'assets', code: 'F', label: 'Asset Library' },
-    { id: 'export', code: 'G', label: 'Export & Figma Handoff' },
-    { id: 'settings', code: 'H', label: 'Settings & Usage' },
+    { id: 'hyperframes', code: 'G', label: 'HyperFrames Motion' },
+    { id: 'export', code: 'H', label: 'Export & Figma Handoff' },
+    { id: 'settings', code: 'I', label: 'Settings & Usage' },
   ];
 
   return (
@@ -833,12 +846,12 @@ export default function App() {
         </div>
       </header>
 
-      {/* Secondary Operational Studio Ribbon: All 8 Sections (A–H) + Unboxed Project Status Metadata */}
-      <div className="bg-[#EBE6DC] border-b border-[#D8D2C5] px-6 lg:px-10 py-2.5 flex flex-wrap items-center justify-between gap-4">
+      {/* Secondary Operational Studio Ribbon: All 9 Sections (A–I) + Unboxed Project Status Metadata */}
+      <div className="bg-[#EBE6DC] border-b border-[#D8D2C5] px-6 lg:px-10 py-2.5 flex flex-wrap items-center justify-between gap-3">
         <div
           role="tablist"
-          aria-label="All Studio Sections A through H"
-          className="flex flex-wrap items-center gap-1.5"
+          aria-label="All Studio Sections A through I"
+          className="flex flex-wrap items-center gap-1"
         >
           {workspaceTabs.map((tab) => {
             const isActive = activeSection === tab.id;
@@ -849,7 +862,7 @@ export default function App() {
                 aria-selected={isActive}
                 type="button"
                 onClick={() => setActiveSection(tab.id)}
-                className={`px-3 py-1.5 text-xs font-mono-tabular transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                className={`px-2.5 py-1.5 text-[11px] font-mono-tabular transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                   isActive
                     ? 'bg-[#0F1A2C] text-[#F7F4EE] font-semibold'
                     : 'bg-transparent text-[#121212] hover:bg-white'
@@ -973,6 +986,14 @@ export default function App() {
             brandTokens={project.brandTokens}
             onAddAsset={handleAddAsset}
             onAssignAssetToSlide={handleAssignAssetToSlide}
+          />
+        )}
+
+        {activeSection === 'hyperframes' && (
+          <HyperframesSection
+            project={project}
+            specs={compiledSpecs}
+            onRecordHyperframesExport={handleRecordHyperframesExport}
           />
         )}
 

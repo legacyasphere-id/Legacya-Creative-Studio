@@ -83,6 +83,13 @@ export const DashboardSection: React.FC<DashboardSectionProps> = ({
             </button>
             <button
               type="button"
+              onClick={() => onNavigate('hyperframes')}
+              className="px-4 py-2.5 text-xs font-semibold uppercase tracking-wider border border-[#0F1A2C] bg-white text-[#0F1A2C] hover:bg-[#0F1A2C] hover:text-[#F7F4EE] transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+            >
+              HyperFrames Motion (Video-as-Code)
+            </button>
+            <button
+              type="button"
               onClick={() => onNavigate('editor')}
               className="px-5 py-2.5 text-xs font-semibold uppercase tracking-wider bg-[#0F1A2C] text-[#F7F4EE] hover:bg-[#1C2D4A] transition-colors whitespace-nowrap shrink-0 cursor-pointer"
             >
