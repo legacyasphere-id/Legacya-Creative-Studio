@@ -1,6 +1,5 @@
 import 'dotenv/config';
 import express from 'express';
-import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI, Type } from '@google/genai';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -14,7 +13,7 @@ import {
   compileCampaignFromIntelligence,
   validateIntelligenceRecord,
 } from './src/services/intelligenceBridge.ts';
-import {
+import type {
   CreativeBrief,
   CreativeConcept,
   LayoutPatternId,
@@ -534,6 +533,7 @@ async function startServer() {
   const app = createStudioApiApp();
 
   if (process.env.NODE_ENV !== 'production') {
+    const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
@@ -547,7 +547,7 @@ async function startServer() {
     });
   }
 
-  const PORT = 3000;
+  const PORT = Number(process.env.PORT) || 3000;
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`LEGACYA SPHERE Creative Studio running on http://0.0.0.0:${PORT}`);
   });

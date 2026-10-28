@@ -1,4 +1,4 @@
-import { BrandSystemTokens, LayoutPatternId, SlideCategory } from '../types/studio';
+import type { BrandSystemTokens, LayoutPatternId, SlideCategory } from '../types/studio.ts';
 
 export const DEFAULT_BRAND_TOKENS: BrandSystemTokens = {
   version: '1.0.0-provisional',

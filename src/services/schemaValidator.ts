@@ -1,11 +1,11 @@
-import {
+import type {
   FigmaExportContract,
   SlideSpecification,
   StudioProject,
   ValidationIssue,
   ValidationReport,
-} from '../types/studio';
-import { compileSlideSpecification, computeContrastRatio } from './layoutEngine';
+} from '../types/studio.ts';
+import { compileSlideSpecification, computeContrastRatio } from './layoutEngine.ts';
 
 const HEX_COLOR_REGEX = /^#[0-9a-fA-F]{6}$/;
 

@@ -1,5 +1,5 @@
-import { DEFAULT_BRAND_TOKENS } from '../tokens/defaultTokens';
-import { StudioAsset, StudioProject } from '../types/studio';
+import { DEFAULT_BRAND_TOKENS } from '../tokens/defaultTokens.ts';
+import type { StudioAsset, StudioProject } from '../types/studio.ts';
 
 function createArchitecturalSvgDataUrl(
   variant: 'monolith' | 'grid_matrix' | 'compass_arc' | 'wordmark_plate'

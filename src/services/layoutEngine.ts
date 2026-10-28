@@ -1,4 +1,4 @@
-import {
+import type {
   BrandSystemTokens,
   FigmaImageNode,
   FigmaShapeNode,
@@ -7,8 +7,8 @@ import {
   SlideSpecification,
   StoryboardSlide,
   StudioAsset,
-} from '../types/studio';
-import { LAYOUT_PATTERN_META, SLIDE_CATEGORY_META } from '../tokens/defaultTokens';
+} from '../types/studio.ts';
+import { LAYOUT_PATTERN_META, SLIDE_CATEGORY_META } from '../tokens/defaultTokens.ts';
 
 /**
  * Computes WCAG 2.1 relative luminance and contrast ratio between two hex colors.
